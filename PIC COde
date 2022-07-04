@@ -1,0 +1,73 @@
+#include <math.h>
+sbit LCD_RS at RD1_bit ;
+sbit LCD_EN at RD0_bit;
+sbit LCD_D4 at RD4_bit;
+sbit LCD_D5 at RD5_bit;
+sbit LCD_D6 at RD6_bit;
+sbit LCD_D7 at RD7_bit;
+
+sbit LCD_RS_direction at TRISD1_bit;
+sbit LCD_EN_direction at TRISD0_bit;
+sbit LCD_D4_direction at TRISD4_bit;
+sbit LCD_D5_direction at TRISD5_bit;
+sbit LCD_D6_direction at TRISD6_bit;
+sbit LCD_D7_direction at TRISD7_bit;
+
+float a=0;
+float t=0;
+float i=0;
+int y;
+unsigned int n=0;
+//char txt[8];
+//char txt1[8];
+  char txt1[] = "No Load"
+void T0Delay()
+{
+unsigned char j;
+for(j=0;j<93;j++)
+{
+while (!INTCON.T0IF);
+INTCON.T0IF=0;
+}
+}
+
+void main()
+{ Lcd_Init();                        // Initialize LCD
+  Lcd_Cmd(_LCD_CLEAR);               // Clear display
+  Lcd_Cmd(_LCD_CURSOR_OFF);
+Adc_init();
+OPTION_REG = 0x07;
+TMR0=0;
+while(1)
+{
+loopA:
+delay_us(500);
+y=adc_read(0);// ADC step size =19.5mV.
+delay_us(500);
+i=(y*0.04); // for precision C.T's transformation ratio.
+if(y==0)
+{
+while(y==0)
+{
+Lcd_Out( 1, 2,txt1);
+delay_ms(500);
+y=adc_read(0);
+if(y>0)
+{
+goto loopA;
+}
+}
+}
+while(PORTB.B2==0);// Connect P.T output.
+T0Delay();
+while(PORTB.B4==0);// Connect C.T output.
+t=INTCON.T0IF;
+a=((t*0.9231)*0.01744);// 195 ticks equal to 180 degree.
+n=cos(a);
+IntTOStr(n,txt);
+Lcd_Out(1,6,txt);
+IntTOStr(i,txt1);
+Lcd_Out(2,2,txt1);
+delay_ms(500);
+}
+}
